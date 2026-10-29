@@ -1,0 +1,360 @@
+<title>Ontario Site Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: lever rail on the left; verdict, cost bars, flip rule and year table on the right; 20,000-future stress test full width below. Stacks on phones. */
+:root{
+  --bg:#F6F4EF; --panel:#FCFBF8; --ink:#13212E; --muted:#4A5563; --line:#DAD6CC; --chip:#EFECE5;
+  --india:#E07A1F; --india-ink:#A8500B; --india-soft:#F6D9BC;
+  --ohio:#2F6FB0; --ohio-ink:#245A92; --ohio-soft:#CFE0F1;
+  --good:#2E6B44; --bad:#A33A2B;
+  --display:'Space Grotesk', 'Segoe UI', Arial, sans-serif;
+  --body:'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+  --mono:'IBM Plex Mono', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101B26; --panel:#172534; --ink:#EEF1F4; --muted:#A9B6C3; --line:#2A3B4D; --chip:#1D2E40;
+  --india:#F0A35E; --india-ink:#F5B57A; --india-soft:#5A3B22;
+  --ohio:#6FA6DE; --ohio-ink:#9CC3EA; --ohio-soft:#24476B;
+  --good:#7FC79A; --bad:#F08A7A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101B26; --panel:#172534; --ink:#EEF1F4; --muted:#A9B6C3; --line:#2A3B4D; --chip:#1D2E40;
+  --india:#F0A35E; --india-ink:#F5B57A; --india-soft:#5A3B22;
+  --ohio:#6FA6DE; --ohio-ink:#9CC3EA; --ohio-soft:#24476B;
+  --good:#7FC79A; --bad:#F08A7A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:28px 48px}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+header{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--india-ink)}
+h1{font-family:var(--display);font-size:clamp(26px,4vw,40px);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:19px;line-height:1.2;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+.grid{display:grid;grid-template-columns:minmax(0,370px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.ctl{display:flex;flex-direction:column;gap:6px}
+.ctl label{display:flex;justify-content:space-between;gap:12px;font-weight:500}
+.ctl output{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl small,.note{color:var(--muted);font-size:13px;margin:0}
+input[type=range]{width:100%;accent-color:var(--india)}
+input[type=range]:disabled{opacity:.4}
+.ohio input[type=range],input.ohio{accent-color:var(--ohio)}
+.group{display:flex;flex-direction:column;gap:14px;padding-top:16px;border-top:1px solid var(--line)}
+.label{margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;font:inherit;font-weight:500;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--ohio);outline-offset:2px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.presets button[aria-pressed="true"]{border-color:var(--india);box-shadow:inset 0 0 0 1px var(--india)}
+.verdict{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.badge{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05}
+.badge.india{color:var(--india-ink)} .badge.ohio{color:var(--ohio-ink)}
+.why{color:var(--muted);margin:0;max-width:56ch;flex:1 1 260px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:600px){.kpis{grid-template-columns:minmax(0,1fr)}}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi span{font-size:13px;color:var(--muted)}
+.kpi b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:500}
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar{display:grid;grid-template-columns:120px minmax(0,1fr) 70px;gap:10px;align-items:center}
+@media (max-width:480px){.bar{grid-template-columns:76px minmax(0,1fr) 62px}}
+.bar .name{font-weight:500}
+.track{height:28px;position:relative;display:flex}
+.track .mk{height:100%;border-radius:6px 0 0 6px}
+.track .mv{height:100%;border-radius:0 6px 6px 0}
+.price{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2px dashed var(--muted)}
+.val{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.legend{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.tests{grid-template-columns:minmax(0,1fr)}}
+.test{border-radius:10px;padding:12px 14px;border:1px solid var(--line);border-top-width:4px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.test .st{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.test.pass{border-top-color:var(--good)} .test.fail{border-top-color:var(--bad)}
+.test.pass .st{color:var(--good)} .test.fail .st{color:var(--bad)}
+.test p{margin:0;font-size:14px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted)}
+tr.total td{font-weight:600;border-bottom:none}
+.mcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:24px;align-items:start}
+@media (max-width:760px){.mcgrid{grid-template-columns:minmax(0,1fr)}}
+.big{display:flex;gap:12px;flex-wrap:wrap}
+.big .kpi{flex:1 1 140px}
+.hist{position:relative;padding-bottom:26px;min-width:0}
+.hist svg{display:block;width:100%;height:170px}
+.ticks{position:absolute;left:0;right:0;bottom:0;height:20px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+.ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.side{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:500}
+.side .l{color:var(--ohio-ink)} .side .r{color:var(--india-ink)}
+.r-ohio{fill:var(--ohio)} .r-india{fill:var(--india)} .r-zero{stroke:var(--ink)}
+@media (prefers-reduced-motion: no-preference){.track .mk,.track .mv{transition:width .25s ease}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Solvara Glass · Northline Ontario windshield program</span>
+  <h1>Where should the Ontario glass be made?</h1>
+  <p class="lede">Move the levers the board will argue about: freight, duty and route, Harlow’s learning, Indian wages and a Northline premium. Every cost rebuilds Exhibit 2 line by line from Exhibit 3, across the six-year, 850,000-set program.</p>
+</header>
+
+<div class="grid">
+  <section class="panel" aria-label="Levers">
+    <h2>Levers</h2>
+    <div class="presets" role="group" aria-label="Scenarios">
+      <button type="button" data-p="base">Case base</button>
+      <button type="button" data-p="cleared">Cleared at 29%</button>
+      <button type="button" data-p="stress">Spot freight</button>
+      <button type="button" data-p="learned">Harlow learned + premium</button>
+    </div>
+    <div class="group">
+      <p class="label">Talavane, India</p>
+      <div class="seg" role="group" aria-label="Route into Canada">
+        <button type="button" id="r-free">Duty-free lane</button>
+        <button type="button" id="r-clear">Cleared at Savannah</button>
+      </div>
+      <div class="ctl"><label for="freight">Ocean freight a 40-ft box <output id="o-freight"></output></label><input id="freight" type="range" min="3000" max="20000" step="100"><small>1,200 sets a box. Case plan $7,800; spot quotes Aug–Oct 2026 $11,000–13,000</small></div>
+      <div class="ctl"><label for="duty">US duty if cleared <output id="o-duty"></output></label><input id="duty" type="range" min="0" max="50" step="0.1"><small>On the $45 declared value. Exhibit 10 uses 4%, 16.4% and 29%</small></div>
+      <div class="ctl"><label for="wage">Indian wage growth a year <output id="o-wage"></output></label><input id="wage" type="range" min="0" max="20" step="0.5"></div>
+      <div class="ctl"><label for="fx">Rupee weakens a year <output id="o-fx"></output></label><input id="fx" type="range" min="-3" max="8" step="0.5"><small>Applied from ₹84 to labour and power, 2026 to each program year</small></div>
+    </div>
+    <div class="group ohio">
+      <p class="label">Harlow Springs, Ohio</p>
+      <div class="ctl"><label for="yield">Proven yield <output id="o-yield"></output></label><input id="yield" type="range" min="80" max="95" step="0.5"></div>
+      <div class="ctl"><label for="output">Sets a shift <output id="o-output"></output></label><input id="output" type="range" min="650" max="800" step="5"></div>
+      <div class="ctl"><label for="crew">Workers a line <output id="o-crew"></output></label><input id="crew" type="range" min="52" max="62" step="1"></div>
+      <div class="ctl"><label for="prem">Northline US-content premium <output id="o-prem"></output></label><input id="prem" type="range" min="0" max="15" step="0.1"><small>US-made glass saves Northline about $12.50 a car at 25% US duty, if its cars go south</small></div>
+    </div>
+    <div class="group">
+      <p class="label">Cost frame</p>
+      <div class="seg" role="group" aria-label="Cost frame">
+        <button type="button" id="f-cash">Cash cost</button>
+        <button type="button" id="f-full">Full cost</button>
+      </div>
+      <p class="note">Cash cost leaves out depreciation and allocated SG&amp;A, which are sunk at both plants.</p>
+    </div>
+  </section>
+
+  <div class="col">
+    <section class="panel" aria-label="Result">
+      <div class="verdict">
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+          <span class="label">Site of record on these settings</span>
+          <span class="badge" id="badge" aria-live="polite"></span>
+        </div>
+        <p class="why" id="why"></p>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span id="k1l"></span><b id="k1"></b></div>
+        <div class="kpi"><span id="k2l"></span><b id="k2"></b></div>
+        <div class="kpi"><span>Harlow minus Talavane, a set</span><b id="k3"></b></div>
+      </div>
+      <div class="bars" aria-label="Average cost a set over the program">
+        <div class="legend"><span><i style="background:linear-gradient(90deg,var(--india) 50%,var(--ohio) 50%)"></i>Solid: make, at the plant</span><span><i style="background:linear-gradient(90deg,var(--india-soft) 50%,var(--ohio-soft) 50%)"></i>Pale: move — pack, freight, duty, carry</span><span>Dashed: $50.00 launch and $46.34 final price</span></div>
+        <div class="bar"><span class="name">Talavane</span><div class="track" id="tA"></div><span class="val" id="vA"></span></div>
+        <div class="bar"><span class="name">Harlow</span><div class="track" id="tB"></div><span class="val" id="vB"></span></div>
+        <p class="note" id="today"></p>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Flip rule">
+      <h2>The board’s flip rule, tested at site lock in January 2027</h2>
+      <div class="tests">
+        <div class="test" id="t1"><span class="st"></span><p>Harlow holds 88% yield or better for three months on the Setu pilot line</p></div>
+        <div class="test" id="t2"><span class="st"></span><p id="t2p"></p></div>
+        <div class="test" id="t3"><span class="st"></span><p>No US or Kaizu bid needs the Harlow slot</p>
+          <div class="seg" role="group" aria-label="Harlow slot"><button type="button" id="c-free">Slot free</button><button type="button" id="c-need">Slot needed</button></div></div>
+      </div>
+      <p class="note">All three must pass to move the program to Ohio, judged on cash cost at today’s cost base. If Northline fixes the site before the test can run, it stays at Talavane.</p>
+    </section>
+
+    <section class="panel" aria-label="Six-year program">
+      <h2>Six-year program, year by year</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Year</th><th>Sets</th><th>Price</th><th>Talavane a set</th><th>Talavane</th><th>Harlow</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="note">Program years 2029–2034. The duty-free lane carries $0.40 a set for the bonded hub and second lane, plus $0.5M set-up. Talavane held at today’s 93% yield and 780 sets a shift; Harlow held at the proven levels on the left.</p>
+    </section>
+  </div>
+</div>
+
+<section class="panel" aria-label="Stress test">
+  <div class="verdict">
+    <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+      <span class="label">Stress test · 20,000 simulated futures</span>
+      <h2>How often does Talavane still win when things go wrong?</h2>
+    </div>
+    <div class="presets" role="group" aria-label="Stress settings">
+      <button type="button" data-m="base">Base odds</button>
+      <button type="button" data-m="stress">Advocate’s stress</button>
+      <button type="button" data-m="certain">Harlow learning certain</button>
+    </div>
+  </div>
+  <div class="mcgrid">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="ctl"><label for="reloc">Northline moves the car to the US <output id="o-reloc"></output></label><input id="reloc" type="range" min="0" max="100" step="5"><small>In a random year from 2030; 29.9% US duty then applies to Indian glass</small></div>
+      <div class="ctl"><label for="pass">Share of that duty Northline carries <output id="o-pass"></output></label><input id="pass" type="range" min="0" max="100" step="5"><small>The relocation clause in our contract terms</small></div>
+      <div class="ctl"><label for="pb">Harlow reaches India’s playbook <output id="o-pb"></output></label><input class="ohio" id="pb" type="range" min="0" max="100" step="5"></div>
+      <div class="ctl"><label for="half">Harlow gets half-way <output id="o-half"></output></label><input class="ohio" id="half" type="range" min="0" max="100" step="5"><small id="o-sq"></small></div>
+      <p class="note">Also drawn in every run: freight swings of about ±30% with a 1-in-10 spike to 1.8×, air expedites, a line-down event, a Harlow launch stumble and quality penalties. Freight median, route, premium and cost frame come from the levers above.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="big">
+        <div class="kpi"><span>Talavane earns more</span><b id="m1"></b></div>
+        <div class="kpi"><span>Talavane loses money</span><b id="m2"></b></div>
+        <div class="kpi"><span>Average edge to Talavane</span><b id="m3"></b></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="side"><span class="l">← Harlow earns more</span><span class="r">Talavane earns more →</span></div>
+        <div class="hist"><svg id="hist" viewBox="0 0 450 170" preserveAspectRatio="none" role="img" aria-label="Distribution of Talavane's six-year edge over Harlow"></svg><div class="ticks" id="ticks"></div></div>
+        <p class="note">Six-year edge, Talavane minus Harlow, in $ million. Each bar is $1M wide.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+  var VOL=[60000,180000,180000,180000,180000,70000], PRICE=[50.00,48.75,47.53,46.34,46.34,46.34];
+  // Harlow learning paths for the stress test, cost a set 2029-2034, from the team model
+  var HB={cash:{pb:[35.32,35.32,35.32,35.32,35.32,35.32],half:[41.33,41.33,41.33,41.33,41.33,41.33],sq:[44.83,43.87,42.96,42.23,42.23,42.23]},
+          full:{pb:[45.48,45.48,45.48,45.48,45.48,45.48],half:[51.94,51.94,51.94,51.94,51.94,51.94],sq:[55.69,54.66,53.68,52.90,52.90,52.90]}};
+  var S={free:true,freight:7800,duty:4,wage:11,fx:3,yield:80,output:650,crew:62,prem:0,cash:true,slotFree:true,reloc:15,pass:80,pb:50,half:30};
+  var PRESETS={
+    base:{free:true,freight:7800,duty:4,yield:80,output:650,crew:62,prem:0},
+    cleared:{free:false,freight:7800,duty:29,yield:80,output:650,crew:62,prem:0},
+    stress:{free:true,freight:12000,duty:29,yield:95,output:800,crew:52,prem:0},
+    learned:{free:true,freight:7800,duty:29,yield:95,output:800,crew:52,prem:6}
+  };
+  var MPRE={base:{reloc:15,pass:80,pb:50,half:30,freight:7800,free:true},stress:{reloc:40,pass:80,pb:50,half:30,freight:12000,free:true},certain:{reloc:40,pass:80,pb:100,half:0,freight:12000,free:true}};
+  var $=function(id){return document.getElementById(id)};
+
+  // Talavane cost a set, n years after 2026 (n=0 is the Exhibit 2 base)
+  function tal(n,freight){
+    var drift=Math.pow(1+S.wage/100,n)/Math.pow(1+S.fx/100,n), pw=1/Math.pow(1+S.fx/100,n);
+    var make=13.40+1.45*drift+1.70*pw+0.90+(S.cash?0:1.60+5.80);
+    var duty=S.free?0:S.duty/100*45;
+    var move=2.75+2.40+(freight==null?S.freight:freight)/1200+1.15+duty+(S.free?0.40:0);
+    return {make:make,move:move,total:make+move};
+  }
+  function har(cash){
+    var y=S.yield/100, g=S.output, w=S.crew, c=cash==null?S.cash:cash;
+    var make=15.60/y+w*25.5*8/(g*y)+1.136/y+1.44/y+(c?0:1716/(g*y)+7.90);
+    return {make:make,move:2.23,total:make+2.23};
+  }
+  function m(v){return (v<0?'−':'')+'$'+(Math.abs(v)/1e6).toFixed(1)+'M'}
+  function d(v){return '$'+v.toFixed(2)}
+  function bar(el,c,col,soft){
+    var max=66; el.innerHTML='';
+    var a=document.createElement('div');a.className='mk';a.style.width=(c.make/max*100)+'%';a.style.background=col;
+    var b=document.createElement('div');b.className='mv';b.style.width=(c.move/max*100)+'%';b.style.background=soft;
+    el.appendChild(a);el.appendChild(b);
+    [50,46.34].forEach(function(p){var l=document.createElement('div');l.className='price';l.style.left=(p/max*100)+'%';el.appendChild(l)});
+  }
+  function render(){
+    $('o-freight').textContent='$'+S.freight.toLocaleString('en-US')+' · $'+(S.freight/1200).toFixed(2)+'/set';
+    $('o-duty').textContent=S.duty.toFixed(1)+'%';
+    $('o-wage').textContent=S.wage.toFixed(1)+'%';
+    $('o-fx').textContent=S.fx.toFixed(1)+'%';
+    $('o-yield').textContent=S.yield.toFixed(1)+'%';
+    $('o-output').textContent=S.output;
+    $('o-crew').textContent=S.crew;
+    $('o-prem').textContent='$'+S.prem.toFixed(2)+'/set';
+    $('duty').disabled=S.free;
+
+    var B=har(), ea=S.free?-500000:0, eb=0, rows='', avg={make:0,move:0,total:0};
+    for(var i=0;i<6;i++){var A=tal(3+i), a=VOL[i]*(PRICE[i]-A.total), b=VOL[i]*(PRICE[i]+S.prem-B.total), w=VOL[i]/850000; ea+=a; eb+=b;
+      avg.make+=A.make*w; avg.move+=A.move*w; avg.total+=A.total*w;
+      rows+='<tr><td>'+(2029+i)+'</td><td>'+VOL[i].toLocaleString('en-US')+'</td><td>'+d(PRICE[i])+'</td><td>'+d(A.total)+'</td><td>'+m(a)+'</td><td>'+m(b)+'</td></tr>';}
+    rows+='<tr class="total"><td>Total</td><td>850,000</td><td></td><td>'+d(avg.total)+' avg</td><td>'+m(ea)+'</td><td>'+m(eb)+'</td></tr>';
+    $('rows').innerHTML=rows;
+    bar($('tA'),avg,'var(--india)','var(--india-soft)');
+    bar($('tB'),B,'var(--ohio)','var(--ohio-soft)');
+    $('vA').textContent=d(avg.total); $('vB').textContent=d(B.total);
+    $('today').textContent='Six-year average, '+(S.cash?'cash':'full')+' cost. At today’s cost base: Talavane '+d(tal(0).total)+', Harlow '+d(B.total)+(S.prem>0?', before Northline’s $'+S.prem.toFixed(2)+' premium.':'.');
+    var lbl=S.cash?'contribution':'EBIT';
+    $('k1l').textContent='Talavane, six-year '+lbl; $('k2l').textContent='Harlow, six-year '+lbl;
+    $('k1').textContent=m(ea); $('k2').textContent=m(eb);
+    var gap=B.total-S.prem-avg.total; $('k3').textContent=(gap>=0?'+':'−')+'$'+Math.abs(gap).toFixed(2);
+
+    // Flip rule: judged on cash cost at today's base, as the board signs it
+    var keep=S.cash; S.cash=true; var cashGap=har(true).total-tal(0).total; S.cash=keep;
+    var t1=S.yield>=88, t2=cashGap<=0||S.prem>=cashGap, t3=S.slotFree;
+    test('t1',t1); test('t2',t2); test('t3',t3);
+    $('t2p').textContent=cashGap<=0?'Harlow is already cheaper on cash cost at these settings':
+      'Freight above $'+(S.freight/1200+cashGap).toFixed(2)+' a set, or a Northline premium above $'+cashGap.toFixed(2)+' a set';
+    var badge=$('badge'), why=$('why');
+    if(t1&&t2&&t3){badge.textContent='Harlow Springs';badge.className='badge ohio';
+      why.textContent='All three tests pass: Harlow has proven its yield, the cash gap is covered, and the slot is free.';}
+    else{badge.textContent='Talavane';badge.className='badge india';
+      why.textContent=eb>ea?'Harlow’s numbers look better here, but the flip rule is not met, so Talavane stays the site of record.':
+        (S.free?'On the duty-free lane Talavane is cheaper by $'+Math.abs(gap).toFixed(2)+' a set, averaged over the program.':
+        'Even cleared through Savannah, Talavane is still ahead on these settings.');}
+    scheduleMC();
+  }
+  function test(id,ok){var el=$(id);el.className='test '+(ok?'pass':'fail');el.querySelector('.st').textContent=ok?'Pass':'Not met'}
+
+  // Monte Carlo, ported from the team model; seeded, so the same settings give the same answer
+  var timer=null;
+  function scheduleMC(){clearTimeout(timer);timer=setTimeout(runMC,100)}
+  function runMC(){
+    $('o-reloc').textContent=S.reloc+'%'; $('o-pass').textContent=S.pass+'%';
+    $('o-pb').textContent=S.pb+'%'; $('o-half').textContent=S.half+'%';
+    $('o-sq').textContent='Current pace in the remaining '+Math.max(0,100-S.pb-S.half)+'% of futures';
+    var s=5; function r(){s=(s+0x6D2B79F5)>>>0;var t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}
+    function n(){var u=1-r(),v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+    var TA=[], med=S.freight+(S.free?480:0); for(var y=0;y<6;y++)TA.push(tal(3+y,7800).total-(S.free?0.40:0));
+    var H=HB[S.cash?'cash':'full'], N=20000, win=0, loss=0, sum=0, bins=[];
+    for(var z=0;z<45;z++)bins.push(0);
+    var pb=S.pb/100, half=Math.min(S.half/100,1-pb), reloc=S.reloc/100, pass=S.pass/100, extra=(0.299-(S.free?0:S.duty/100))*45;
+    for(var i=0;i<N;i++){
+      var eA=S.free?-0.5e6:0, ry=r()<reloc?1+Math.floor(r()*5):99;
+      for(var k=0;k<6;k++){var fr=Math.exp(Math.log(med)+0.30*n()); if(r()<0.10)fr*=1.8;
+        var c=TA[k]+(fr-7800)/1200+(k>=ry?Math.max(0,extra)*(1-pass):0);
+        eA+=VOL[k]*(PRICE[k]-c); if(r()<0.30)eA-=202e3; if(r()<0.03)eA-=1.76e6;}
+      if(r()<0.30)eA-=0.85e6;
+      var u=r(), path=u<pb?'pb':(u<pb+half?'half':'sq'), stumble=r()<0.10, eB=0;
+      for(var j=0;j<6;j++){eB+=VOL[j]*(PRICE[j]+S.prem-H[path][j]-(stumble&&(j==1||j==2)?12.5:0)); if(r()<0.05)eB-=0.704e6;}
+      var diff=(eA-eB)/1e6; sum+=diff; if(eA>eB)win++; if(eA<0)loss++;
+      bins[Math.max(0,Math.min(44,Math.floor(diff+20)))]++;
+    }
+    $('m1').textContent=(win/N*100).toFixed(0)+'%'; $('m2').textContent=(loss/N*100).toFixed(1)+'%';
+    var av=sum/N; $('m3').textContent=(av<0?'−':'+')+'$'+Math.abs(av).toFixed(1)+'M';
+    var mx=Math.max.apply(null,bins)||1, svg='';
+    for(var b=0;b<45;b++){var h=bins[b]/mx*160; if(h>0)svg+='<rect class="'+(b>=20?'r-india':'r-ohio')+'" x="'+(b*10+1)+'" y="'+(170-h).toFixed(1)+'" width="8" height="'+h.toFixed(1)+'"/>';}
+    svg+='<line class="r-zero" x1="200" x2="200" y1="0" y2="170" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    $('hist').innerHTML=svg;
+  }
+  (function(){var t='';[-20,-10,0,10,20].forEach(function(v){t+='<span style="left:'+((v+20)/45*100)+'%">'+(v>0?'+':v<0?'−':'')+Math.abs(v)+'</span>'});$('ticks').innerHTML=t})();
+
+  function press(id,on){$(id).setAttribute('aria-pressed',on?'true':'false')}
+  function clearPresets(){document.querySelectorAll('[data-p],[data-m]').forEach(function(b){b.setAttribute('aria-pressed','false')})}
+  function sync(){
+    ['freight','duty','wage','fx','yield','output','crew','prem','reloc','pass','pb','half'].forEach(function(k){$(k).value=S[k]});
+    press('r-free',S.free);press('r-clear',!S.free);press('f-cash',S.cash);press('f-full',!S.cash);press('c-free',S.slotFree);press('c-need',!S.slotFree);
+    render();
+  }
+  ['freight','duty','wage','fx','yield','output','crew','prem'].forEach(function(k){$(k).addEventListener('input',function(e){S[k]=parseFloat(e.target.value);clearPresets();render()})});
+  ['reloc','pass','pb','half'].forEach(function(k){$(k).addEventListener('input',function(e){S[k]=parseFloat(e.target.value);
+    if(k==='pb'&&S.pb+S.half>100){S.half=100-S.pb;$('half').value=S.half}
+    if(k==='half'&&S.pb+S.half>100){S.pb=100-S.half;$('pb').value=S.pb}
+    clearPresets();scheduleMC()})});
+  $('r-free').onclick=function(){S.free=true;clearPresets();sync()}; $('r-clear').onclick=function(){S.free=false;clearPresets();sync()};
+  $('f-cash').onclick=function(){S.cash=true;sync()}; $('f-full').onclick=function(){S.cash=false;sync()};
+  $('c-free').onclick=function(){S.slotFree=true;sync()}; $('c-need').onclick=function(){S.slotFree=false;sync()};
+  document.querySelectorAll('[data-p]').forEach(function(b){b.onclick=function(){var p=PRESETS[b.dataset.p];for(var k in p)S[k]=p[k];clearPresets();sync();b.setAttribute('aria-pressed','true')}});
+  document.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){var p=MPRE[b.dataset.m];for(var k in p)S[k]=p[k];clearPresets();sync();b.setAttribute('aria-pressed','true')}});
+  sync(); document.querySelector('[data-p="base"]').setAttribute('aria-pressed','true');
+})();
+</script>
